@@ -2,19 +2,22 @@
 {% block main %}
 
 	<div id="sidebar" >
-        {% from "_formhelpers.html" import render_field %}
         <form id ="circ_form" method='POST' action="/rcplot/">
-
+            <!--{{ form.hidden_tag() }}-->
             <table>
-                <tr>
-                    {{ render_field(form.vSource) }}
-                    {{ render_field(form.vType) }}
-                    {{ render_field(form.t_0) }}
-                    {{ render_field(form.resistance) }}
-                    {{ render_field(form.rOrder) }}
-                    {{ render_field(form.capacitance) }}
-                    {{ render_field(form.cOrder) }}
-                </tr>
+                {% for field in form if field.widget.input_type != 'hidden' %}
+                        <tr>
+                            <td>{{ field.label }}</td>
+                            <td>{{ field }}</td>
+                        </tr>
+                        {% if field.errors %}
+                            <ul class=errors>
+                            {% for error in field.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                            </ul>
+                        {% endif %}
+                {% endfor %}
             </table>
             <p><input type=submit value=Submit>
                <button type="button" id="annotate">Annotate</button>

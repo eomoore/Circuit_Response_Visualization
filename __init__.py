@@ -18,6 +18,9 @@ app.add_url_rule('/rc/', view_func=rc, methods=['GET'])
 app.add_url_rule('/rcplot/', view_func=rcplot, methods=['POST'])
 app.add_url_rule('/rcplot/<value>/', view_func=rcplot, methods=['POST'])
 
+app.add_url_rule('/plot/<value1>/', view_func=plot, methods=['POST'])
+app.add_url_rule('/plot/<value1>/<value2>/', view_func=plot, methods=['POST'])
+
 app.add_url_rule('/lr/', view_func=lr, methods=['GET'])
 app.add_url_rule('/lrplot/', view_func=lrplot, methods=['POST'])
 app.add_url_rule('/lrplot/<value>/', view_func=lrplot, methods=['POST'])

@@ -1,5 +1,8 @@
 $(document).ready(function(){
 
+        //$('#a').hide();
+        //$('#b').hide();
+
         $("#loading-div-background").hide();
         $("#loading-div-background").css({ opacity: 0.7 });
 
