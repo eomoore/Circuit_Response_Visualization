@@ -1,0 +1,25 @@
+{% extends "layout.html" %}
+{% block main %}
+
+	<div id="sidebar" >
+        {% from "_formhelpers.html" import render_field %}
+        <form method='POST' action="/lr/">
+
+            <table>
+                <tr>
+                    {{ render_field(form.vSource) }}
+                    {{ render_field(form.resistance) }}
+                    {{ render_field(form.rOrder) }}
+                    {{ render_field(form.inductance) }}
+                    {{ render_field(form.lOrder) }}
+                </tr>
+            </table>
+            <p><input type=submit value=Submit>
+        </form>
+	</div>
+
+    <div id="content" >
+               <img src="{{ url_for('lrplot') }}" alt="Image Placeholder">
+	</div>
+
+{% endblock %}

@@ -1,0 +1,41 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type" />
+
+<title> {{title}}</title>
+<link rel=stylesheet type=text/css href="{{ url_for('static', filename='stylesheet.css') }}">
+<!--<script src="//code.jquery.com/jquery-1.10.2.js"></script>-->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/jquery-ui.css') }}" />
+<script src="{{ url_for('static', filename='js/jquery-1.9.1.js') }}"></script>
+<script src="{{ url_for('static', filename='js/jquery-ui.js') }}"></script>
+<!--<link href='static/css/sofia.css' rel='stylesheet' type='text/css'>-->
+<!--<strong>-->
+<!--<link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">-->
+<!--<link rel="stylesheet" href="{{ url_for('static', filename='css/lean-slider.css') }}">-->
+<!--<link rel="stylesheet" href="{{ url_for('static', filename='css/sample-styles.css') }}">-->
+<!--</strong>-->
+<script type=text/javascript>
+$SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+</script>
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</head>
+
+<body>
+
+    <div id="header">
+		<div id="navigation">
+			<ul class="links">
+				<li><a href="{{ url_for('rc') }}">RC Circuits</a></li>
+				<li><a href="{{ url_for('lr') }}">LR Circuits</a></li>
+				<li><a href="{{ url_for('lrc_series') }}">LRC Circuits (series)</a></li>
+				<li><a href="{{ url_for('lrc_parallel') }}">LRC Circuits (parallel)</a></li>
+			</ul>
+		</div>
+	</div>
+	<br /><hr /><br />
+{% block main %}{% endblock %}
+</body>
+
+</html>

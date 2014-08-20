@@ -1,0 +1,85 @@
+*{
+	font-family:"Gill Sans", "Gill Sans MT", Calibri, "Trebuchet MS", sans-serif;
+}
+
+div {
+	border-radius: 5px;
+}
+
+#header {
+	z-index:1;
+	position:fixed
+}
+
+#navigation {
+	display:block;
+	width: auto;
+	margin-right: auto;
+	margin-left: auto;
+	float:right;
+
+	}
+
+#navigation ul {
+	list-style-type: none;
+	width: auto;
+	margin: 0;
+	padding: 0;
+}
+
+#navigation li {
+	float: left;
+}
+#navigation a {
+	text-decoration: none;
+	color:teal;
+	display: block;
+	margin: 0 1px;
+	padding: 5px;
+	display: block;
+
+}
+#navigation a:hover {
+	text-decoration: none;
+	color: #261;
+	background-color: #ccc;
+}
+
+
+#sidebar {
+	position: left;
+	float: left;
+	width: 20%;
+	text-align: left;
+	padding: 5px;
+	display:inline-block;
+	margin:auto;
+	background-color: green;
+}
+
+#content {
+	position: right;
+	float:right;
+	width:67.5%;
+	text-align: left;
+	padding: 5px;
+	display:inline-block;
+	margin:auto;
+
+}
+
+#vals{
+   width:3em;
+}
+
+#sidebar ul {
+	list-style-type: none;
+	width: auto;
+	margin: 0;
+	padding: 0;
+}
+
+#sidebar li {
+	float: left;
+    display: inline;
+}
