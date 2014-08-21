@@ -3,10 +3,10 @@
 
 	<div id="sidebar" >
 
-        <img style="height:200px;width:250px;" src="{{ url_for('static', filename='png/vsRX.png') }}">
+        <img style="height:200px;width:250px;" src="{{ url_for( 'static', filename='png/vsRX.png'  ) }}">
 
         <form id ="circ_form" method='POST' action="/plot/{{type}}/">
-            <!--{{ form.hidden_tag() }}-->
+            {{ form.hidden_tag() }}
             <table>
                 {% for field in form if field.widget.input_type != 'hidden' %}
                         <tr>

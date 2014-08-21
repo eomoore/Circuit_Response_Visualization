@@ -27,10 +27,24 @@ def rc():
 
     if request.method == 'GET':
         return render_template('plot.html', form=form, type='rc', title="RC Circuit")
-        # return render_template('rcplot.html', form=form, title="RC Circuit")
 
 
-def plot(value1=None, value2 = None):
+def lr():
+    """
+
+
+
+    :rtype : object
+    :return:
+    """
+    global form
+    form = LRForm()
+
+    if request.method == 'GET':
+        return render_template('plot.html', type='lr', form=form, title="LR Circuit")
+
+
+def plot1(value1=None, value2 = None):
     """
 
     :param value1:
@@ -71,53 +85,6 @@ def plot(value1=None, value2 = None):
     else:
         return render_template('404.html'), 404
 
-
-def rcplot(value=0):
-    global form
-    form = RCForm()
-    # if request.method == 'POST' and form.validate():
-    # if form.validate_on_submit():
-    if request.method == 'POST':
-        (v_s, v_t, time_0, r, r_order, c, c_order) = get_values(form)
-        v, i, t, tau, i_tau, v_tau = solver(v_source=v_s, v_type=v_t, t_0=time_0, res=r * r_order, cap=c * c_order,
-                                            circuit_type=0)
-
-        if value == 'annotate':
-            return plot(v, i, t, time_0, tau, i_tau, v_tau, 'rc', v_t, annotate=1)
-
-        else:
-            return plot(v, i, t, time_0, tau, i_tau, v_tau, 'rc', v_t, annotate=0)
-
-
-def lr():
-    """
-
-    
-
-    :rtype : object
-    :return: 
-    """
-    global form
-    form = LRForm()
-
-    if request.method == 'GET':
-        return render_template('lrplot.html', form=form, title="LR Circuit")
-
-
-def lrplot(value=0):
-    global form
-    form = LRForm(request.form)
-    if request.method == 'POST':
-        (v_s, v_t, time_0, r, r_order, ind, ind_order) = get_values(form)
-
-        v, i, t, tau, i_tau, v_tau = solver(v_source=v_s, v_type=v_t, t_0=time_0, res=r * r_order, ind=ind * ind_order,
-                                            circuit_type=1)
-
-        if value == 'annotate':
-            return plot(v, i, t, time_0, tau, i_tau, v_tau, 'lr', v_t, annotate=1)
-
-        else:
-            return plot(v, i, t, time_0, tau, i_tau, v_tau, 'lr', v_t, annotate=0)
 
 
 def lrc(value):
