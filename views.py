@@ -34,7 +34,7 @@ def lr():
     form = LRForm()
 
     if request.method == 'GET':
-        return render_template('plot.html', type='lr', form=form, title="LR Circuit")
+        return render_template('plot.html', form=form, type='lr', title="LR Circuit")
 
 
 def plot1(value1=None, value2=None):
@@ -43,9 +43,9 @@ def plot1(value1=None, value2=None):
     if value1 == 'rc':
         form = RCForm()
         if request.method == 'POST':
-            (v_s, v_t, time_0, r, r_order, c, c_order) = get_values(form)
+            v_s, v_t, time_0, r, r_order, c, c_order, v_a, v_b = get_values(form)
             v, i, t, tau, i_tau, v_tau = solver(v_source=v_s, v_type=v_t, t_0=time_0, res=r * r_order, cap=c * c_order,
-                                                circuit_type=0)
+                                                circuit_type=0, v_a=v_a, v_b=v_b)
 
             if value2 == 'annotate':
                 return plot(v, i, t, time_0, tau, i_tau, v_tau, 'rc', v_t, annotate=1)
@@ -184,10 +184,12 @@ def heaviside1(x, v):
     return y
 
 
-def solver(circuit_type=0, v_source=0, v_type=1, t_0=0, res=0, cap=0, ind=0):
+def solver(circuit_type=0, v_source=0, v_type=1, t_0=0, res=0, cap=0, ind=0, v_a=0, v_b=0):
     """
 
 
+
+    :type v_source: object
     :param circuit_type:
         The type of circuit
         0 = RC circuit
@@ -210,18 +212,21 @@ def solver(circuit_type=0, v_source=0, v_type=1, t_0=0, res=0, cap=0, ind=0):
             i_tau is the value of the current at t = tau
             v_tau is the value of the voltage at t = tau
     """
-    v, i, t, tau, v_tau, i_tau = 0, 0, 0, 0, 0, 0
-    if circuit_type == 0:                                       # RC Circuit
+    tau, v_tau, i_tau = 0, 0, 0
+
+    if circuit_type == 0:                                   # RC Circuit
         tau = res * cap
         t = np.linspace(-tau + t_0, (7 * tau) + t_0, 100)
-        if v_type == '1':                                       # V * u(t)
+        v = np.zeros(t.shape)
+        i = np.zeros(t.shape)
+        if v_type == '1':                                   # V * u(t)
             v = v_source * (1 - (np.exp(-(t - t_0) / tau)))
             v *= heaviside(v)
             i = (v_source - v) / res
             v_tau = v_source * (1 - (np.exp(-tau / tau)))
             i_tau = (v_source - v_tau) / res
 
-        elif v_type == '2':                                     # V * u(-t)
+        elif v_type == '2':                                 # V * u(-t)
             v = v_source * (np.exp(-(t - t_0) / tau))
             v_temp = v_source * (np.exp(-0 / tau))
             v = heaviside1(v, v_temp)
@@ -229,21 +234,25 @@ def solver(circuit_type=0, v_source=0, v_type=1, t_0=0, res=0, cap=0, ind=0):
             v_tau = v_source * (np.exp(-tau / tau))
             i_tau = (0 - v_tau) / res
 
-        elif v_type == '3':                                     # V * u(t) - u(t-t0)
+        elif v_type == '3':
+            pass
+
+        elif v_type == '4':                                 # V * u(t) - u(t-t0)
             t = np.linspace(-2 * tau, (7 * tau) + t_0, 100)
             v1 = v_source * (1 - (np.exp(-t / tau)))
             v2 = v_source * (1 - (np.exp(-(t - t_0) / tau)))
-            v1 = heaviside(v1) * v1
-            v2 = heaviside(v2) * v2
+            v1 *= heaviside(v1)
+            v2 *= heaviside(v2)
             v = v1 - v2
             i = (v_source - v) / res
             v_tau = v_source * (1 - (np.exp(-tau / tau)))
             i_tau = (v_source - v_tau) / res
 
-    elif circuit_type == 1:                                     # LR Circuit
+    elif circuit_type == 1:                                 # LR Circuit
         tau = ind / res
-        t = np.linspace(-tau + t_0, (7 * tau) + t_0)
-
+        t = np.linspace(-tau + t_0, (7 * tau) + t_0, 100)
+        v = np.zeros(t.shape)
+        i = np.zeros(t.shape)
         if v_type == '1':  # V * u(t)
             i = (v_source / res) * (1 - (np.exp(-(t - t_0) / tau)))
             i *= heaviside(i)
@@ -251,7 +260,7 @@ def solver(circuit_type=0, v_source=0, v_type=1, t_0=0, res=0, cap=0, ind=0):
             i_tau = (v_source / res) * (1 - (np.exp(-tau / tau)))
             v_tau = v_source - (i_tau * res)
 
-        elif v_type == '2':                                     # V * u(-t)
+        elif v_type == '2':                                 # V * u(-t)
             i = (v_source / res) * (np.exp(-(t - t_0) / tau))
             i_temp = (v_source / res) * (np.exp(-0 / tau))
             i = heaviside1(i, i_temp)
@@ -259,7 +268,10 @@ def solver(circuit_type=0, v_source=0, v_type=1, t_0=0, res=0, cap=0, ind=0):
             i_tau = (v_source / res) * (np.exp(-tau / tau))
             v_tau = 0 - (i_tau * res)
 
-        elif v_type == '3':                                     # V * u(t) - u(t-t0)
+        elif v_type == '3':
+            pass
+
+        elif v_type == '4':                                 # V * u(t) - u(t-t0)
             t = np.linspace(-2 * tau, (7 * tau) + t_0, 100)
             i1 = (v_source / res) * (1 - (np.exp(-t / tau)))
             i1 *= heaviside(i1)
@@ -287,8 +299,10 @@ def get_values(form):
         rOrderOfMag = form.rOrder.data
         c = form.capacitance.data
         cOrderOfMag = form.cOrder.data
+        v_a = form.a_value.data
+        v_b = form.b_value.data
 
-        return Vs, Vt, t0, r, rOrderOfMag, c, cOrderOfMag
+        return Vs, Vt, t0, r, rOrderOfMag, c, cOrderOfMag, v_a, v_b
 
     except AttributeError:
         Vs = form.vSource.data
@@ -298,8 +312,10 @@ def get_values(form):
         rOrderOfMag = form.rOrder.data
         l = form.inductance.data
         lOrderOfMag = form.lOrder.data
+        v_a = form.a_value.data
+        v_b = form.b_value.data
 
-        return Vs, Vt, t0, r, rOrderOfMag, l, lOrderOfMag
+        return Vs, Vt, t0, r, rOrderOfMag, l, lOrderOfMag, v_a, v_b
 
 
 def plot(v, i, t, t_0, tau, i_tau, v_tau, circ_type, v_type, annotate=0):
@@ -335,22 +351,19 @@ def plot(v, i, t, t_0, tau, i_tau, v_tau, circ_type, v_type, annotate=0):
     if annotate and ((v_type == '1' and circ_type == 'rc') or (v_type == '2' and circ_type == 'lr')):
         plt.plot([0 + t_0, tau + t_0], [v.min(), v.max()], color='red', linewidth=1, linestyle='--')
         plt.annotate('tau = %s' % tau, xy=(tau, v_tau), xycoords='data',
-                     xytext=(+tau, +v_tau), textcoords='offset points', fontsize=16,
-                     arrowprops=dict(arrowstyle="->", connectionstyle="arc3,rad=.2"))
+                     xytext=(+tau, +v_tau), textcoords='offset points', fontsize=16)
 
     elif annotate and ((v_type == '2' and circ_type == 'rc') or (v_type == '1' and circ_type == 'lr')):
         plt.plot([0 + t_0, tau + t_0], [v.max(), v.min()], color='red', linewidth=1, linestyle='--')
         plt.annotate('tau = %s' % tau, xy=(tau, v_tau), xycoords='data',
-                     xytext=(+tau, +v_tau), textcoords='offset points', fontsize=16,
-                     arrowprops=dict(arrowstyle="->", connectionstyle="arc3,rad=.2"))
+                     xytext=(+tau, +v_tau), textcoords='offset points', fontsize=16)
 
-    elif annotate and ((v_type == '3' and circ_type == 'rc') or (v_type == '3' and circ_type == 'lr')):
+    elif annotate and ((v_type == '4' and circ_type == 'rc') or (v_type == '4' and circ_type == 'lr')):
         plt.plot([0, 0], [v.min(), v.max()], color='red', linewidth=1, linestyle='--')
         plt.plot([0, t_0], [v.max(), v.max()], color='red', linewidth=1, linestyle='--')
         plt.plot([t_0, t_0], [v.min(), v.max()], color='red', linewidth=1, linestyle='--')
 
-
-        # Create a new subplot from a 2x1 grid
+    # Create a new subplot from a 2x1 grid
     plt.subplot(212)
 
     # Plot the Current
@@ -364,16 +377,14 @@ def plot(v, i, t, t_0, tau, i_tau, v_tau, circ_type, v_type, annotate=0):
     if annotate and ((v_type == '1' and circ_type == 'rc') or (v_type == '2' and circ_type == 'lr')):
         plt.plot([0 + t_0, tau + t_0], [i.max(), i.min()], color='red', linewidth=1, linestyle='--')
         plt.annotate('tau = %s' % tau, xy=(tau, i_tau), xycoords='data',
-                     xytext=(+0, +0), textcoords='offset points', fontsize=16,
-                     arrowprops=dict(arrowstyle="->", connectionstyle="arc3,rad=.2"))
+                     xytext=(+0, +0), textcoords='offset points', fontsize=16)
 
     elif annotate and ((v_type == '2' and circ_type == 'rc') or (v_type == '1' and circ_type == 'lr')):
         plt.plot([0 + t_0, tau + t_0], [i.min(), i.max()], color='red', linewidth=1, linestyle='--')
         plt.annotate('tau = %s' % tau, xy=(tau, v_tau), xycoords='data',
-                     xytext=(+0, +0), textcoords='offset points', fontsize=16,
-                     arrowprops=dict(arrowstyle="->", connectionstyle="arc3,rad=.2"))
+                     xytext=(+0, +0), textcoords='offset points', fontsize=16)
 
-    elif annotate and ((v_type == '3' and circ_type == 'rc') or (v_type == '3' and circ_type == 'lr')):
+    elif annotate and ((v_type == '4' and circ_type == 'rc') or (v_type == '4' and circ_type == 'lr')):
         plt.plot([0, 0], [i.min(), i.max()], color='red', linewidth=1, linestyle='--')
         plt.plot([0, t_0], [i.max(), i.max()], color='red', linewidth=1, linestyle='--')
         plt.plot([t_0, t_0], [i.min(), i.max()], color='red', linewidth=1, linestyle='--')
