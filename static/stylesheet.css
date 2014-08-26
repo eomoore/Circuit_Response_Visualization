@@ -49,12 +49,12 @@ div {
 #sidebar {
 	position: left;
 	float: left;
-	width: 20%;
+	width: 22%;
 	text-align: left;
 	padding: 5px;
 	display:inline-block;
 	margin:auto;
-	background-color: grey;
+
 }
 
 #content {
