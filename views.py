@@ -1,6 +1,7 @@
-from flask import render_template, request, send_file
+from flask import render_template, request
 import numpy as np
-import cStringIO
+from scipy.integrate import odeint, simps
+
 import matplotlib
 
 matplotlib.use('Agg')
@@ -37,6 +38,39 @@ def lr():
         return render_template('plot.html', form=form, type='lr', title="LR Circuit")
 
 
+def lrc(value):
+    if value is 'series':
+        lrc_series()
+    elif value is 'parallel':
+        lrc_parallel()
+    else:
+        return render_template('404.html'), 404
+
+
+def lrc_series():
+    global form
+
+    form = LRCForm()
+
+    if request.method == 'GET':
+        return render_template('lrcplot.html', form=form, type='lrcseries', title="Series LRC Circuit")
+
+    elif request.method == 'POST':
+        return render_template('lrcplot.html', form=form, type='lrcseries', title="Series LRC Circuit")
+
+
+def lrc_parallel():
+    global form
+
+    form = LRCForm()
+
+    if request.method == 'GET':
+        return render_template('lrcplot.html', form=form, type='lrcparallel', title="Parallel LRC Circuit")
+
+    elif request.method == 'POST':
+        return render_template('lrcplot.html', form=form, type='lrcparallel', title="Parallel LRC Circuit")
+
+
 def plot1(value1=None, value2=None):
     global form
 
@@ -67,82 +101,98 @@ def plot1(value1=None, value2=None):
             else:
                 return plot(v, i, t, time_0, tau, i_tau, v_tau, 'lr', v_t, annotate=0)
 
+    elif value1 == 'lrcseries':
+        form = LRCForm()
+        if request.method == 'POST':
+            (v_s, v_t, r, r_order, c, c_order, ind, ind_order) = get_values1(form)
+
+            v_c, v_r, v_l, i, t = solver(v_source=v_s, v_type=v_t, res=r * r_order, cap=c*c_order,
+                                         ind=ind * ind_order, circuit_type=2)
+
+            if value2 == 'annotate':
+                return lrcplot(v_c, v_r, v_l, i, t)
+
+            else:
+                return lrcplot(v_c, v_r, v_l, i, t)
+
+    elif value1 == 'lrcparallel':
+        form = LRCForm()
+        if request.method == 'POST':
+            (v_s, v_t, r, r_order, c, c_order, ind, ind_order) = get_values1(form)
+
+            v, i_c, i_r, i_l, t = solver(v_source=v_s, v_type=v_t, res=r * r_order, cap=c*c_order,
+                                         ind=ind * ind_order, circuit_type=3)
+
+            if value2 == 'annotate':
+                return lrcplot1(v, i_c, i_r, i_l, t)
+
+            else:
+                return lrcplot1(v, i_c, i_r, i_l, t)
+
     else:
         return render_template('404.html'), 404
 
 
-def lrc(value):
-    if value is 'series':
-        lrc_series()
-    elif value is 'parallel':
-        lrc_parallel()
-    else:
-        return render_template('404.html'), 404
+def lrcplot(v_c, v_r, v_l, i, t):
+    plt.clf()
+
+    # Create a new figure
+    fig = plt.figure(1)
+
+    # Create a new subplot from a 2x1 grid
+    a = plt.subplot(211)
+
+    # Plot the Voltage
+    a.plot(t, v_c, linewidth=2.5)
+    a.plot(t, v_r, linewidth=2.5)
+    a.plot(t, v_l, linewidth=2.5)
+
+    # Add a label for the y-axis
+    plt.ylabel('Voltage (v)')
+
+    # Create a new subplot from a 2x1 grid
+    plt.subplot(212)
+
+    # Plot the Current
+    plt.plot(t, i, linewidth=2.5)
+
+    # Add a label for the y-axis
+    plt.ylabel('Current (A)')
+    # Add a label for the y-axis
+    plt.xlabel('Time (s)')
+
+    return mpld3.fig_to_html(fig)
 
 
-def lrc_series():
-    global form
+def lrcplot1(v, i_c, i_r, i_l, t):
+    plt.clf()
 
-    form = LRCForm()
+    # Create a new figure
+    fig = plt.figure(1)
 
-    if request.method == 'GET':
-        return render_template('plot.html', form=form, title="LRC Circuit")
+    # Create a new subplot from a 2x1 grid
+    a = plt.subplot(211)
 
-    elif request.method == 'POST':
-        return render_template('plot.html', form=form, title="LRC Circuit")
+    # Plot the Voltage
+    a.plot(t, v, linewidth=2.5)
 
+    # Add a label for the y-axis
+    plt.ylabel('Voltage (v)')
 
-def lrc_parallel():
-    global form
+    # Create a new subplot from a 2x1 grid
+    plt.subplot(212)
 
-    form = LRCForm()
+    # Plot the Current
+    plt.plot(t, i_c, linewidth=2.5)
+    plt.plot(t, i_r, linewidth=2.5)
+    plt.plot(t, i_l, linewidth=2.5)
 
-    if request.method == 'GET':
-        return render_template('plot.html', form=form, title="LRC Circuit")
+    # Add a label for the y-axis
+    plt.ylabel('Current (A)')
+    # Add a label for the y-axis
+    plt.xlabel('Time (s)')
 
-    elif request.method == 'POST':
-        return render_template('plot.html', form=form, title="LRC Circuit")
-
-
-def lrcplot():
-    global form
-
-    # if request.method == 'POST' and rcform.validate():
-    if request.method == 'GET' or request.method == 'POST':
-        # if rcform.validate_on_submit():
-        # if request.method == 'POST':
-        vs = form.vSource.data
-        r = form.resistance.data
-        rmag = form.rOrder.data
-        l = form.inductance.data
-        lmag = form.lOrder.data
-        tau = r * rmag * l * lmag
-        # tau = r * l
-
-        # Generate the plot
-        x = np.linspace(0, 7 * tau)
-        vc = vs * (1 - (np.exp(-x / tau)))
-        i = (vs - vc) / r
-
-        plt.clf()
-        plt.figure(1)
-        plt.subplot(211)
-        plt.plot(x, vc)
-        plt.ylabel('Voltage (v)')
-
-        plt.subplot(212)
-        plt.plot(x, i)
-
-        plt.ylabel('Current (A)')
-        plt.xlabel('Time (s)')
-
-        f = cStringIO.StringIO()
-        plt.savefig(f, format='png')
-
-        # Serve up the data
-        f.seek(0)
-
-    return send_file(f, mimetype='image/png')
+    return mpld3.fig_to_html(fig)
 
 
 def heaviside(x):
@@ -162,15 +212,33 @@ def heaviside(x):
     return y
 
 
-def heaviside1(x, v):
+def heaviside1(x, value):
     x = np.array(x)
     if x.shape != ():
-
         y = np.zeros(x.shape)
         for ind, temp in np.ndenumerate(x):
-            if x[ind] >= v:
-                y[ind] = v
+            if x[ind] >= value:
+                y[ind] = value
+            else:
+                y[ind] = temp
 
+    else:  # special case for 0d array (a number)
+        if x < 0:
+            y = 1
+        elif x == 0:
+            y = 0.5
+        else:
+            y = 0
+    return y
+
+
+def heaviside2(x, v):
+    x = np.array(x)
+    if x.shape != ():
+        y = np.zeros(x.shape)
+        for ind, temp in np.ndenumerate(x):
+            if x[ind] <= v:
+                y[ind] = v
             else:
                 y[ind] = temp
 
@@ -194,6 +262,8 @@ def solver(circuit_type=0, v_source=0, v_type=1, t_0=0, res=0, cap=0, ind=0, v_a
         The type of circuit
         0 = RC circuit
         1 = LR circuit
+        2 = Series LRC Circuit
+        3 = Parallel LRC Circuit
     :param v_source:
         The magnitude of the voltage
     :param v_type:
@@ -219,47 +289,56 @@ def solver(circuit_type=0, v_source=0, v_type=1, t_0=0, res=0, cap=0, ind=0, v_a
     """
     tau, v_tau, i_tau = 0, 0, 0
 
-    if circuit_type == 0:                                   # RC Circuit
+    if circuit_type == 0:                                                   # RC Circuit
         tau = res * cap
         t = np.linspace(-tau + t_0, (7 * tau) + t_0, 500)
         v = np.zeros(t.shape)
         i = np.zeros(t.shape)
-        if v_type == '1':                                   # V * u(t)
+        if v_type == '1':                                                   # V * u(t)
             v = v_source * (1 - (np.exp(-(t - t_0) / tau)))
             v *= heaviside(v)
-            i = (v_source - v) / res
+
+            i = np.gradient(v) * cap
             v_tau = v_source * (1 - (np.exp(-tau / tau)))
             i_tau = (v_source - v_tau) / res
 
-        elif v_type == '2':                                 # V * u(-t)
+        elif v_type == '2':                                                 # V * u(-t)
             v = v_source * (np.exp(-(t - t_0) / tau))
             v_temp = v_source * (np.exp(-0 / tau))
             v = heaviside1(v, v_temp)
-            i = (0 - v) / res
+            i = np.gradient(v) * cap
             v_tau = v_source * (np.exp(-tau / tau))
             i_tau = (0 - v_tau) / res
 
-        elif v_type == '3':                                 # A*u(-t) + B*u(t)
-            t *= heaviside(t)
+        elif v_type == '3':                                                 # A*u(-t) + B*u(t)
             v = v_b + ((v_a - v_b)*(np.exp(-(t - t_0) / tau)))
 
-            # v *= heaviside(v)
-            i = (v_source - v)/res
-            v_tau = v_b + ((v_a - v_b)*(np.exp(-(tau - t_0) / tau)))
-            i_tau = (v_source - v_tau)/res
+            if v_b > v_a:
+                for x in np.nditer(v, op_flags=['readwrite']):
+                    if x < v_a:
+                        x[...] = v_a
 
-        elif v_type == '4':                                 # V * u(t) - u(t-t0)
+            elif v_b < v_a:
+                for x in np.nditer(v, op_flags=['readwrite']):
+                    if x > v_a:
+                        x[...] = v_a
+
+            i = np.gradient(v) * cap
+            # v_tau = v_b + ((v_a - v_b)*(np.exp(-(tau - t_0) / tau)))
+            # i_tau = (v_source - v_tau)/res
+
+        elif v_type == '4':                                                 # V * u(t) - u(t-t0)
             t = np.linspace(-2 * tau, (7 * tau) + t_0, 500)
             v1 = v_source * (1 - (np.exp(-t / tau)))
             v2 = v_source * (1 - (np.exp(-(t - t_0) / tau)))
             v1 *= heaviside(v1)
             v2 *= heaviside(v2)
             v = v1 - v2
-            i = (v_source - v) / res
+            i = np.gradient(v) * cap
             v_tau = v_source * (1 - (np.exp(-tau / tau)))
             i_tau = (v_source - v_tau) / res
 
-    elif circuit_type == 1:                                 # LR Circuit
+    elif circuit_type == 1:                                                 # LR Circuit
         tau = ind / res
         t = np.linspace(-tau + t_0, (7 * tau) + t_0, 500)
         v = np.zeros(t.shape)
@@ -267,69 +346,132 @@ def solver(circuit_type=0, v_source=0, v_type=1, t_0=0, res=0, cap=0, ind=0, v_a
         if v_type == '1':  # V * u(t)
             i = (v_source / res) * (1 - (np.exp(-(t - t_0) / tau)))
             i *= heaviside(i)
-            v = v_source - (i * res)
+            v = np.gradient(i) * ind * -1
             i_tau = (v_source / res) * (1 - (np.exp(-tau / tau)))
             v_tau = v_source - (i_tau * res)
 
-        elif v_type == '2':                                 # V * u(-t)
+        elif v_type == '2':                                                 # V * u(-t)
             i = (v_source / res) * (np.exp(-(t - t_0) / tau))
             i_temp = (v_source / res) * (np.exp(-0 / tau))
             i = heaviside1(i, i_temp)
-            v = 0 - (i * res)
+            v = np.gradient(i) * ind * -1
             i_tau = (v_source / res) * (np.exp(-tau / tau))
             v_tau = 0 - (i_tau * res)
 
-        elif v_type == '3':
+        elif v_type == '3':                                                 # A*u(-t) + B*u(t)
             i = (v_b / res) + ((v_a - v_b) / res) * (np.exp(-(t - t_0) / tau))
-            v = v_source - (i * res)
-            i_tau = (v_b / res) + ((v_a - v_b) / res) * (np.exp(-(tau) / tau))
-            v_tau = v_source - (i_tau * res)
 
-        elif v_type == '4':                                 # V * u(t) - u(t-t0)
+            if v_b > v_a:
+                for x in np.nditer(i, op_flags=['readwrite']):
+                    if x < (v_a/res):
+                        x[...] = v_a/res
+
+            elif v_b < v_a:
+                for x in np.nditer(v, op_flags=['readwrite']):
+                    if x > (v_a/res):
+                        x[...] = v_a/res
+
+            v = np.gradient(i) * ind * -1
+            # i_tau = (v_b / res) + ((v_a - v_b) / res) * (np.exp(-(tau) / tau))
+            # v_tau = v_source - (i_tau * res)
+
+        elif v_type == '4':                                                 # V * u(t) - u(t-t0)
             t = np.linspace(-2 * tau, (7 * tau) + t_0, 100)
             i1 = (v_source / res) * (1 - (np.exp(-t / tau)))
             i1 *= heaviside(i1)
             i2 = (v_source / res) * (1 - (np.exp(-(t - t_0) / tau)))
             i2 *= heaviside(i2)
             i = i1 - i2
-            v = v_source - (i * res)
+            v = np.gradient(i) * ind * -1
             i_tau = (v_source / res) * (1 - (np.exp(-tau / tau)))
             v_tau = v_source - (i_tau * res)
 
-    elif circuit_type == 2:
-        pass
-    elif circuit_type == 3:
-        pass
+    elif circuit_type == 2:                                                 # Series LRC Circuit
+        v0 = v_source
+        i0 = 0
+        i0_prime = (-1/ind) * (res*i0 + v0)
+
+        def deriv(i, t):
+            return np.array([i[1], (v_source/ind) - (res/ind)*i[0] - i[1]/(ind*cap)])
+
+        t = np.linspace(0, 10, 1001)
+        i_init = np.array([i0, i0_prime], dtype=np.float)
+
+        q, i = odeint(deriv, i_init, t).T
+
+        v_c = q/cap
+        v_r = res * i
+        v_l = np.gradient(i) * ind
+
+        return v_c, v_r, v_l, i, t
+
+    elif circuit_type == 3:                                                 # Parallel LRC Circuit
+        a = -1/(res * cap)
+        b = -1/(ind * cap)
+        v0 = 0
+        i0 = v_source
+        v0_prime = (-1/cap) * (i0 + (v0/res))
+
+        def deriv(v, t):
+            return np.array([v[1], (v_source/cap)-v[0]/(ind * cap) + -v[1]/(res * cap)])
+
+        t = np.linspace(0.0, 10.0, 1001)
+        v_init = np.array([v0, v0_prime], dtype=np.float)
+
+        x, v = odeint(deriv, v_init, t).T
+
+        i_l = x/ind
+        i_r = v/res
+        i_c = np.gradient(v) * cap
+
+        return v, i_c, i_r, i_l, t
 
     return v, i, t, tau, i_tau, v_tau
 
 
 def get_values(form):
     try:
-        Vs = form.vSource.data
-        Vt = form.vType.data
+        vs = form.vSource.data
+        vt = form.vType.data
         t0 = form.t_0.data
         r = form.resistance.data
-        rOrderOfMag = form.rOrder.data
+        rorderofmag = form.rOrder.data
         c = form.capacitance.data
-        cOrderOfMag = form.cOrder.data
+        corderofmag = form.cOrder.data
         v_a = form.a_value.data
         v_b = form.b_value.data
 
-        return Vs, Vt, t0, r, rOrderOfMag, c, cOrderOfMag, v_a, v_b
+        return vs, vt, t0, r, rorderofmag, c, corderofmag, v_a, v_b
 
     except AttributeError:
-        Vs = form.vSource.data
-        Vt = form.vType.data
+        vs = form.vSource.data
+        vt = form.vType.data
         t0 = form.t_0.data
         r = form.resistance.data
-        rOrderOfMag = form.rOrder.data
+        rorderofmag = form.rOrder.data
         l = form.inductance.data
-        lOrderOfMag = form.lOrder.data
+        lorderofmag = form.lOrder.data
         v_a = form.a_value.data
         v_b = form.b_value.data
 
-        return Vs, Vt, t0, r, rOrderOfMag, l, lOrderOfMag, v_a, v_b
+        return vs, vt, t0, r, rorderofmag, l, lorderofmag, v_a, v_b
+
+
+def get_values1(form):
+    try:
+        vs = form.vSource.data
+        vt = form.vType.data
+        r = form.resistance.data
+        rorderofmag = form.rOrder.data
+        c = form.capacitance.data
+        corderofmag = form.cOrder.data
+        l = form.inductance.data
+        lorderofmag = form.lOrder.data
+
+        return vs, vt, r, rorderofmag, c, corderofmag, l, lorderofmag
+
+    except AttributeError:
+        pass
 
 
 def plot(v, i, t, t_0, tau, i_tau, v_tau, circ_type, v_type, annotate=0):
@@ -357,7 +499,7 @@ def plot(v, i, t, t_0, tau, i_tau, v_tau, circ_type, v_type, annotate=0):
     a = plt.subplot(211)
 
     # Plot the Voltage
-    a.plot(t, v)
+    a.plot(t, v, linewidth=2.5)
 
     # Add a label for the y-axis
     plt.ylabel('Voltage (v)')
@@ -381,7 +523,7 @@ def plot(v, i, t, t_0, tau, i_tau, v_tau, circ_type, v_type, annotate=0):
     plt.subplot(212)
 
     # Plot the Current
-    plt.plot(t, i)
+    plt.plot(t, i, linewidth=2.5)
 
     # Add a label for the y-axis
     plt.ylabel('Current (A)')

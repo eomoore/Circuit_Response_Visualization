@@ -29,4 +29,4 @@ class LRForm(Baseform):
 
 class LRCForm(RCForm):
     inductance = FloatField('X = L', default=1, validators=[DataRequired()])
-    lOrder = RadioField('', choices=[(1, 'H'), (1000, 'KH'), (1000000, 'MH')], default=1)
+    lOrder = RadioField('', choices=[(1, 'H'),(0.001, 'mH')], default=1, coerce=float)
