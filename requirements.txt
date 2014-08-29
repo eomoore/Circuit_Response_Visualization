@@ -2,11 +2,6 @@ Flask==0.10.1
 Flask-WTF==0.10.0
 Jinja2==2.7.2
 MarkupSafe==0.18
-PIL==1.1.7
-PyYAML==3.11
-Pygments==1.6
-SQLAlchemy==0.9.4
-Sphinx==1.2.2
 WTForms==2.0.1
 Werkzeug==0.9.6
 backports.ssl-match-hostname==3.4.0.2
